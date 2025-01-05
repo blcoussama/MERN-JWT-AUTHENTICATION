@@ -82,3 +82,12 @@ export const VerifyEmail = async(req, res) => {
         res.status(500).json({success: false, message: "Server Error"})
     }
 }
+
+export const Login = async(req, res) => {
+    
+}
+
+export const Logout = async(req, res) => {
+    res.clearCookie("JWTtoken")
+    res.status(200).json({success: true, message: "Logged Out Successfully."})
+}
