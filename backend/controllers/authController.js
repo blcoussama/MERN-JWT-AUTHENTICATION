@@ -84,10 +84,38 @@ export const VerifyEmail = async(req, res) => {
 }
 
 export const Login = async(req, res) => {
-    
+    const { email, password} = req.body
+
+    try {
+        const user = await User.findOne({ email })
+        if(!user) {
+            return res.status(400).json({success: false, message: "Invalid Credentials!"})
+        }
+        const isPasswordValid  = await bcrypt.compare(password, user.password)
+        if(!isPasswordValid) {
+            return res.status(400).json({success: false, message: "Invalid Credentials!"})
+        }
+
+        GenerateJwtTtokenAndSetCookie(res, user._id)
+
+        user.lasLogin = new Date()
+        await user.save()
+
+        res.status(200).json({
+            success: true,
+            message: "LoggedIn Successfully.",
+            user: {
+                ...user._doc,
+                password: undefined
+            }
+        })
+    } catch (error) {
+        console.log("Error while Login!", error);
+        res.status(400).json({success: false, message: error.message})
+    }
 }
 
 export const Logout = async(req, res) => {
-    res.clearCookie("JWTtoken")
+    res.clearCookie("JWTtoken") 
     res.status(200).json({success: true, message: "Logged Out Successfully."})
 }
