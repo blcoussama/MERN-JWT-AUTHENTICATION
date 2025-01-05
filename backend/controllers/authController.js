@@ -181,6 +181,22 @@ export const ResetPassword = async(req, res) => {
 
     } catch (error) {
         console.error(`Error while reseting the password!`, error);
-        throw new Error(`Error while reseting the password: ${error.message}`)
+        res.status(400).json({success: false, message: error.message})
+    }
+}
+
+export const CheckAuth = async(req, res) => {
+    try {
+        const user = await User.findById(req.userId)
+        if(!user) return res.status(400).json({success: false, message: "User Not Found!"})
+
+        res.status(200).json({
+            success: true,
+            ...user._doc,
+            password: undefined
+        })
+    } catch (error) {
+        console.error(`Error In Checking the Authentication!`, error);
+        res.status(400).json({success: false, message: error.message})
     }
 }
