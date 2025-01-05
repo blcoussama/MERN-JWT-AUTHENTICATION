@@ -1,8 +1,8 @@
-import { PASSWORD_RESET_REQUEST_TEMPLATE, VERIFICATION_EMAIL_TEMPLATE } from "./emailTemplates.js"
+import { PASSWORD_RESET_REQUEST_TEMPLATE, PASSWORD_RESET_SUCCESS_TEMPLATE, VERIFICATION_EMAIL_TEMPLATE } from "./emailTemplates.js"
 import { mailtrapClient, sender } from "./mailtrapConfig.js"
 
 export const SendVerificationEmail = async(email, verificationToken ) => {
-    const recipient = [{email}] 
+    const recipient = [{ email }] 
 
     try {
         const response = await mailtrapClient.send({
@@ -21,7 +21,7 @@ export const SendVerificationEmail = async(email, verificationToken ) => {
 }
 
 export const SendWelcomeEmail = async(email, name) => {
-        const recipient = [{email}]
+        const recipient = [{ email }]
 
         try {
             const response = await mailtrapClient.send({
@@ -41,7 +41,7 @@ export const SendWelcomeEmail = async(email, name) => {
 }
 
 export const SendPasswordResetEmail = async(email, resetURL) => {
-    const recipient = [{email}]
+    const recipient = [{ email }]
 
         try {
             const response = await mailtrapClient.send({
@@ -57,4 +57,23 @@ export const SendPasswordResetEmail = async(email, resetURL) => {
             console.error(`Error Sending the Password reset email!`, error);
             throw new Error(`Error Sending the Password reset email: ${error.message}`)
         }
+}
+
+export const SendPasswordResetSuccessEmail = async(email) => {
+    const recipient = [{ email}]
+
+    try {
+        const response = await mailtrapClient.send({
+            from:sender,
+            to:recipient,
+            subject:"Password Reset Successfully!",
+            html: PASSWORD_RESET_SUCCESS_TEMPLATE,
+            category: "Password Reset Success"
+        })
+        console.log("Password Reset Success email sent successfully.", response);
+
+    } catch (error) {
+        console.error(`Error Sending the Password success reset email!`, error);
+        throw new Error(`Error Sending the Password success reset email: ${error.message}`)
+    }
 }
