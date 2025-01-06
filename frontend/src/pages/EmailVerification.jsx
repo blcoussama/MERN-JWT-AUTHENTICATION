@@ -82,17 +82,17 @@ const EmailVerification = () => {
                         />
                     ))}
                 </div>
-            </form>
 
-            <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type='submit'
-                disabled={isLoading || code.some((digit) => !digit)}
-                className='w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50'
-            >
-                {isLoading ? "Verifying..." : "Verify Email"}
-            </motion.button>
+                <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    type='submit'
+                    disabled={isLoading || code.some((digit) => !digit)}
+                    className='w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-opacity-50 disabled:opacity-50'
+                >
+                    {isLoading ? "Verifying..." : "Verify Email"}
+                </motion.button>
+            </form>
         </motion.div>
     </div>
   )

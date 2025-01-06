@@ -1,19 +1,31 @@
 import { motion } from 'framer-motion'
 import FormInput from '../components/FormInput'
-import { User, Mail, Lock} from 'lucide-react'
+import { User, Mail, Lock, Loader} from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
+import { useAuthStore } from '../store/authStore'
 
 const SignUp = () => {
-
-    const handleSignUp = (event) => {
-        event.preventDefault()
-    }
 
     const [name, setName] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+
+    const navigate = useNavigate()
+
+    const { signUp, error, isLoading } = useAuthStore()
+
+    const handleSignUp = async(e) => {
+        e.preventDefault()
+
+        try {
+            await signUp(email, password, name)
+            navigate("/verify-email")
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
     return (
         <motion.div
@@ -36,16 +48,20 @@ const SignUp = () => {
                     onChange={(e) => setName(e.target.value)} />
 
                     <FormInput icon={Mail} 
-                    type="email" 
-                    placeholder="Email Address" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)} />
+                        type="email" 
+                        placeholder="Email Address" 
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)} 
+                    />
 
                     <FormInput icon={Lock} 
-                    type="password" 
-                    placeholder="Password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)} />
+                        type="password" 
+                        placeholder="Password" 
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)} 
+                    />
+
+                    {error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
                     {/* PASSWORD STRENGTH METER */}
                     <PasswordStrengthMeter password={password} />
                     <motion.button 
@@ -56,8 +72,9 @@ const SignUp = () => {
                         whileHover={{ scale: 1.02}}
                         whileTap={{ scale: 0.98}}
                         type='submit'
+                        disabled={isLoading}
                     >
-                        SignUp       
+                        {isLoading ? <Loader className='animate-spin mx-auto' size={24} /> : "Sign Up"}      
                     </motion.button>
                 </form>
             </div>

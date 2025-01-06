@@ -16,7 +16,7 @@ function App() {
             <Route path="/" element={ <HomePage /> } />
             <Route path="/signup" element={ <SignUp /> } />
             <Route path="/login" element={ <Login /> } />
-            <Route path="/email-verification" element={ <EmailVerification /> } />
+            <Route path="/verify-email" element={ <EmailVerification /> } />
           </Routes>
         </AppLayout>
       </BrowserRouter>
