@@ -20,7 +20,7 @@ export const useAuthStore = create((set) => ({
            set({ user:response.data.user, isAuthenticated:true, isLoading:false })
         } catch (error) {
             set({ error:error.response.data.message || "Error while Signing Up!"})
-            throw new error;
+            throw error;
         }
 
     },
@@ -33,11 +33,12 @@ export const useAuthStore = create((set) => ({
             return response.data
         } catch (error) {
             set({ error:error.response.data.message || "Error Verification email", isLoading: false })
-            throw new error; 
+            throw error; 
         }
     },
 
     checkAuth: async () => {
+        // await new Promise((resolve) => setTimeout(resolve, 30000))
 		set({ isCheckingAuth: true, error: null });
 		try {
 			const response = await axios.get(`${API_URL}/check-auth`);
@@ -47,6 +48,23 @@ export const useAuthStore = create((set) => ({
             console.log(error);
 		}
 	},
+
+    login: async(email, password) => {
+        set({ isLoading:true, error:null })
+
+        try {
+           const response = await axios.post(`${API_URL}/login`, { email, password })
+           set({
+            isAuthenticated:true,
+            user: response.data.user,
+            error:null,
+            isLoading:false
+           })
+        } catch (error) {
+            set({ error:error.response?.data?.message || "Error while Login!", isLoading: false })
+            throw error;
+        }
+    }
 
 
 }))

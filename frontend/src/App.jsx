@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './components/AppLayout'
+import LoadingSpinner from './components/LoadingSpinner'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
 import EmailVerification from './pages/EmailVerification'
@@ -41,10 +42,7 @@ function App() {
 		checkAuth();
 	}, [checkAuth]);
 
-  console.log("is authenticated",isAuthenticated);
-  console.log("user:", user);
-
-
+  if(isCheckingAuth) return <LoadingSpinner />
 
   return (
     
