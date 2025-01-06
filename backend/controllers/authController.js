@@ -192,8 +192,10 @@ export const CheckAuth = async(req, res) => {
 
         res.status(200).json({
             success: true,
+            user: {
             ...user._doc,
             password: undefined
+            }
         })
     } catch (error) {
         console.error(`Error In Checking the Authentication!`, error);
