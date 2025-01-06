@@ -7,6 +7,8 @@ import EmailVerification from './pages/EmailVerification'
 import { useEffect } from "react";
 import { useAuthStore } from "./store/authStore";
 import HomePage from './pages/HomePage'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 // PROTECT Routes that require authentication
 const ProtectRoute = ({ children }) => {
@@ -31,8 +33,9 @@ const RedirectAuthenticatedUsers = ({ children }) => {
     return <Navigate to="/" replace />
   }
 
-  return children
+  return children;
 }
+
 
 function App() {
 
@@ -68,7 +71,24 @@ function App() {
               </RedirectAuthenticatedUsers>
             } />
             
-            <Route path="/verify-email" element={ <EmailVerification /> } />
+            
+            <Route path="/verify-email" element={ 
+              <RedirectAuthenticatedUsers>
+                  <EmailVerification />
+              </RedirectAuthenticatedUsers>
+            } />
+
+            <Route path='/forgot-password' element={ 
+              <RedirectAuthenticatedUsers>
+                <ForgotPassword />
+              </RedirectAuthenticatedUsers> 
+            } />
+
+            <Route path='/reset-password/:token' element={ 
+              <RedirectAuthenticatedUsers>
+                <ResetPassword /> 
+              </RedirectAuthenticatedUsers>
+            } />
           </Routes>
         </AppLayout>
       </BrowserRouter>
