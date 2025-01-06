@@ -3,6 +3,7 @@ import AppLayout from './components/AppLayout'
 import HomePage from './pages/HomePage'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
+import EmailVerification from './pages/EmailVerification'
 
 function App() {
 
@@ -15,6 +16,7 @@ function App() {
             <Route path="/" element={ <HomePage /> } />
             <Route path="/signup" element={ <SignUp /> } />
             <Route path="/login" element={ <Login /> } />
+            <Route path="/email-verification" element={ <EmailVerification /> } />
           </Routes>
         </AppLayout>
       </BrowserRouter>
