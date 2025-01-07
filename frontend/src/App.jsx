@@ -39,7 +39,7 @@ const RedirectAuthenticatedUsers = ({ children }) => {
 
 function App() {
 
-  const { isCheckingAuth, checkAuth, isAuthenticated, user } = useAuthStore();
+  const { isCheckingAuth, checkAuth } = useAuthStore();
 
 	useEffect(() => {
 		checkAuth();
@@ -89,6 +89,9 @@ function App() {
                 <ResetPassword /> 
               </RedirectAuthenticatedUsers>
             } />
+
+            {/* catch all routes */}
+				    <Route path='*' element={<Navigate to='/' replace />} />
           </Routes>
         </AppLayout>
       </BrowserRouter>

@@ -41,7 +41,7 @@ const ResetPasswordPage = () => {
 			className='max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden'
 		>
 			<div className='p-8'>
-				<h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-400 to-emerald-500 text-transparent bg-clip-text'>
+				<h2 className='text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-300 to-emerald-600 text-transparent bg-clip-text'>
 					Reset Password
 				</h2>
 				{error && <p className='text-red-500 font-semibold mb-4'>{error}</p>}

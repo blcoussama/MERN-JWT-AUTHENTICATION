@@ -67,6 +67,10 @@ export const VerifyEmail = async(req, res) => {
             return res.status(400).json({success: false, message: "Invalid or Expired Verification Code!"})
         }
 
+        if (user.isVerified) {
+            return res.status(400).json({ success: false, message: "Email is already verified!" });
+        }
+
         user.isVerified = true,
         user.verificationToken = undefined,
         user.verificationTokenExpiresAt = undefined
