@@ -9,11 +9,15 @@ import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
 export const SignUp = async(req, res) => {
-    const { email, password, name } = req.body
+    const { email, password, username, role } = req.body
 
     try {
-        if(!email || !password || !name) {
+        if(!email || !password || !username || !role) {
             throw new Error("All Fields are required!")
+        }
+
+        if (!["admin", "client"].includes(role)) {
+            throw new Error("Invalid role provided!");
         }
 
         const userAlreadyExists = await User.findOne({ email })
@@ -28,7 +32,8 @@ export const SignUp = async(req, res) => {
         const user = new User({
             email,
             password: hashedPassword,
-            name,
+            username,
+            role,
             verificationToken,
             verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000 // 24 Hours
         })
@@ -36,9 +41,13 @@ export const SignUp = async(req, res) => {
         await user.save()
 
         //JWT TOKEN
-        GenerateJwtTtokenAndSetCookie(res, user._id)
+        GenerateJwtTtokenAndSetCookie(res, user)
 
-        await SendVerificationEmail(user.email, verificationToken)
+        try {
+            await SendVerificationEmail(user.email, verificationToken);
+        } catch (emailError) {
+            console.error("Email failed to send:", emailError.message);
+        }
 
         res.status(201).json({
             success: true, 
@@ -50,7 +59,7 @@ export const SignUp = async(req, res) => {
         })
 
     } catch (error) {
-        res.status(404).json({success: false, message: error.message})
+        res.status(500).json({success: false, message: error.message})
     }
 }
 
@@ -76,7 +85,12 @@ export const VerifyEmail = async(req, res) => {
         user.verificationTokenExpiresAt = undefined
 
         await user.save()
-        await SendWelcomeEmail(user.email, user.name)
+
+        try {
+            await SendWelcomeEmail(user.email, user.username);
+        } catch (emailError) {
+            console.error("Error sending welcome email:", emailError.message);
+        }
 
         res.status(200).json({success: true, message: "Email Verified.", 
             user: {
@@ -95,18 +109,35 @@ export const Login = async(req, res) => {
     const { email, password} = req.body
 
     try {
+        // Input validation
+        if (!email || !password) {
+            return res.status(400).json({ success: false, message: "Email and password are required!" });
+        }
+
+         // Find user by email
         const user = await User.findOne({ email })
         if(!user) {
             return res.status(400).json({success: false, message: "Invalid Credentials!"})
         }
+
+        // Check if the user's email is verified
+        if (!user.isVerified) {
+            return res.status(400).json({ success: false, message: "Please verify your email before logging in." });
+        }
+
+        // Verify password
         const isPasswordValid  = await bcrypt.compare(password, user.password)
         if(!isPasswordValid) {
             return res.status(400).json({success: false, message: "Invalid Credentials!"})
         }
 
-        GenerateJwtTtokenAndSetCookie(res, user._id)
+        // Generate JWT and set cookie
 
-        user.lasLogin = new Date()
+        GenerateJwtTtokenAndSetCookie(res, user)
+
+        // Update last login timestamp
+        user.lastLogin = new Date()
+
         await user.save()
 
         res.status(200).json({
@@ -119,7 +150,7 @@ export const Login = async(req, res) => {
         })
     } catch (error) {
         console.log("Error while Login!", error);
-        res.status(400).json({success: false, message: error.message})
+        res.status(500).json({success: false, message: error.message})
     }
 }
 
@@ -161,6 +192,10 @@ export const ResetPassword = async(req, res) => {
     try {
         const { token } = req.params
         const { password } = req.body
+        
+        if(!password) {
+            throw new Error("Password is required!")
+        }
 
         const user = await User.findOne({
             resetPasswordToken: token,
@@ -191,7 +226,7 @@ export const ResetPassword = async(req, res) => {
 
 export const CheckAuth = async(req, res) => {
     try {
-        const user = await User.findById(req.userId)
+        const user = await User.findById(req.user.userId)
         if(!user) return res.status(400).json({success: false, message: "User Not Found!"})
 
         res.status(200).json({

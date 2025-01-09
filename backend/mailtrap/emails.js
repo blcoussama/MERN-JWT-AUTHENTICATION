@@ -20,7 +20,7 @@ export const SendVerificationEmail = async(email, verificationToken ) => {
     }
 }
 
-export const SendWelcomeEmail = async(email, name) => {
+export const SendWelcomeEmail = async(email, username) => {
         const recipient = [{ email }]
 
         try {
@@ -30,7 +30,7 @@ export const SendWelcomeEmail = async(email, name) => {
                 template_uuid: "a7d59137-e1cc-4d41-a957-421a815810a4",
                 template_variables: {
                     company_info_name: "Node.JS AUTH",
-                    name: name
+                    name: username
                 }
             })
 

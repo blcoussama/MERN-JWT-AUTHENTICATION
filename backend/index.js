@@ -1,7 +1,8 @@
 import express from 'express'
 import dotenv from 'dotenv'
 import { connectDB } from './db/connectDB.js'
-import AuthRoute from './routes/authRoute.js'
+import AuthRoute from './routes/authRoutes.js'
+import UserRoute from './routes/userRoutes.js'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import path from 'path'
@@ -20,6 +21,7 @@ app.use(express.json()) // to parse JSON requests
 app.use(cookieParser()) // to parse incoming cookies
 
 app.use("/api/auth", AuthRoute)
+app.use("/api/users", UserRoute)
 
 if(process.env.NODE_ENV === "production") {
     app.use(express.static(path.join(__dirname, "/frontend/dist")));
