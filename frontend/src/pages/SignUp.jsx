@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import FormInput from '../components/FormInput'
-import { User, Mail, Lock, Loader} from 'lucide-react'
+import { User, Mail, Lock, Loader, UserCog2Icon} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
@@ -8,9 +8,10 @@ import { useAuthStore } from '../store/authStore'
 
 const SignUp = () => {
 
-    const [name, setName] = useState("")
+    const [username, setUsername] = useState("")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [role, setRole] = useState("")
 
     const navigate = useNavigate()
 
@@ -19,8 +20,15 @@ const SignUp = () => {
     const handleSignUp = async(e) => {
         e.preventDefault()
 
+         // Basic form validation
+        if (!username || !email || !password || !role) {
+            useAuthStore.setState({ error: "All fields are required" });
+            return; // Do not proceed further if fields are missing
+        }
+
         try {
-            await signUp(email, password, name)
+            // console.log("Selected Role:", role); // Add this before calling signUp
+            await signUp(email, password, username, role)
             navigate("/verify-email")
         } catch (error) {
             console.log(error);
@@ -41,11 +49,22 @@ const SignUp = () => {
 
                 <form onSubmit={handleSignUp}>
 
+                    <FormInput
+                        icon={UserCog2Icon}
+                        type="select"
+                        options={[
+                            { value: "admin", label: "Admin" },
+                            { value: "client", label: "Client" },
+                        ]}
+                        value={role}
+                        onChange={(e) => setRole(e.target.value)}
+                    />
+
                     <FormInput icon={User} 
                     type="text" 
-                    placeholder="Full Name" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)} />
+                    placeholder="username" 
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)} />
 
                     <FormInput icon={Mail} 
                         type="email" 

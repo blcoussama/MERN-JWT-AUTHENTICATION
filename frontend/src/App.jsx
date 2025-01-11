@@ -9,94 +9,139 @@ import { useAuthStore } from "./store/authStore";
 import HomePage from './pages/HomePage'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import AdminDashboard from './pages/AdminDashboard'
+import ClientDashboard from './pages/ClientDashboard'
 
 // PROTECT Routes that require authentication
-const ProtectRoute = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore()
+const ProtectRoute = ({ children, allowedRoles }) => {
+  const { isAuthenticated, user } = useAuthStore();
 
-  if(!isAuthenticated) {
-    return <Navigate to="/login" replace />
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
   }
 
-  if(!user.isVerified) {
-    return <Navigate to="/verify-email" replace />
+  if (!user.isVerified) {
+    return <Navigate to="/verify-email" replace />;
   }
 
-  return children;
-}
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    return <Navigate to="/" replace />; // Redirect to a default page if unauthorized
+  }
+
+  return children; // Render the child components if all conditions are met
+};
 
 // REDIRECT Authenticated Users to Home Page
 const RedirectAuthenticatedUsers = ({ children }) => {
-  const { isAuthenticated, user } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore();
 
-  if(isAuthenticated && user.isVerified) {
-    return <Navigate to="/" replace />
+  if (isAuthenticated && user.isVerified) {
+    // Redirect to respective dashboards based on user role
+    switch (user.role) {
+      case "admin":
+        return <Navigate to="/admin-dashboard" replace />;
+      case "client":
+        return <Navigate to="/client-dashboard" replace />;
+      default:
+        return <Navigate to="/" replace />; // Fallback to homepage or a default page
+    }
   }
 
-  return children;
-}
+  return children; // Render the child components if not authenticated or not verified
+};
 
 
 function App() {
-
   const { isCheckingAuth, checkAuth } = useAuthStore();
 
-	useEffect(() => {
-		checkAuth();
-	}, [checkAuth]);
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
-  if(isCheckingAuth) return <LoadingSpinner />
+  if (isCheckingAuth) return <LoadingSpinner />;
 
   return (
-    
-     
-      <BrowserRouter>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={
+    <BrowserRouter>
+      <AppLayout>
+        <Routes>
+          <Route
+            path="/"
+            element={
               <ProtectRoute>
                 <HomePage />
               </ProtectRoute>
-            } />
+            }
+          />
 
-            <Route path="/signup" element={ 
+          <Route
+            path="/signup"
+            element={
               <RedirectAuthenticatedUsers>
                 <SignUp />
               </RedirectAuthenticatedUsers>
-            } />
+            }
+          />
 
-            <Route path="/login" element={
+          <Route
+            path="/login"
+            element={
               <RedirectAuthenticatedUsers>
                 <Login />
               </RedirectAuthenticatedUsers>
-            } />
-            
-            
-            <Route path="/verify-email" element={ 
-              <RedirectAuthenticatedUsers>
-                  <EmailVerification />
-              </RedirectAuthenticatedUsers>
-            } />
+            }
+          />
 
-            <Route path='/forgot-password' element={ 
+          <Route
+            path="/verify-email"
+            element={
+              <RedirectAuthenticatedUsers>
+                <EmailVerification />
+              </RedirectAuthenticatedUsers>
+            }
+          />
+
+          <Route
+            path="/forgot-password"
+            element={
               <RedirectAuthenticatedUsers>
                 <ForgotPassword />
-              </RedirectAuthenticatedUsers> 
-            } />
-
-            <Route path='/reset-password/:token' element={ 
-              <RedirectAuthenticatedUsers>
-                <ResetPassword /> 
               </RedirectAuthenticatedUsers>
-            } />
+            }
+          />
 
-            {/* catch all routes */}
-				    <Route path='*' element={<Navigate to='/' replace />} />
-          </Routes>
-        </AppLayout>
-      </BrowserRouter>
-      
-  )
+          <Route
+            path="/reset-password/:token"
+            element={
+              <RedirectAuthenticatedUsers>
+                <ResetPassword />
+              </RedirectAuthenticatedUsers>
+            }
+          />
+
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </ProtectRoute>
+            }
+          />
+
+          <Route
+            path="/client-dashboard"
+            element={
+              <ProtectRoute allowedRoles={["client"]}>
+                <ClientDashboard />
+              </ProtectRoute>
+            }
+          />
+
+          {/* catch all routes */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </AppLayout>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
