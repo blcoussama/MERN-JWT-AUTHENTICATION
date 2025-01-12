@@ -4,7 +4,8 @@ import { User, Mail, Lock, Loader, UserCog2Icon} from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
-import { useAuthStore } from '../store/authStore'
+import { useDispatch, useSelector } from "react-redux"; // Import hooks for Redux
+import { signUp } from "../store/authSlice"; // Import the signUp thunk
 
 const SignUp = () => {
 
@@ -15,23 +16,34 @@ const SignUp = () => {
 
     const navigate = useNavigate()
 
-    const { signUp, error, isLoading } = useAuthStore()
+    const dispatch = useDispatch(); // Get the dispatch function from the Redux store
+    const { isLoading, error } = useSelector((state) => state.auth) // Access Redux state
+
+    const [formError, setFormError] = useState(null); // Local validation error
+
 
     const handleSignUp = async(e) => {
         e.preventDefault()
 
          // Basic form validation
         if (!username || !email || !password || !role) {
-            useAuthStore.setState({ error: "All fields are required" });
-            return; // Do not proceed further if fields are missing
+            setFormError("All Fields are required!")
+            return;
         }
+        setFormError(null); // Clear form error if validation passes
 
         try {
-            // console.log("Selected Role:", role); // Add this before calling signUp
-            await signUp(email, password, username, role)
-            navigate("/verify-email")
+            // Dispatch SignUp Action from redux AuthSlice
+            const resultAction = await dispatch(
+                signUp({ email, password, username, role})
+            )
+
+            // Handle successfull Sign-Up
+            if(signUp.fulfilled.match(resultAction)) {
+                navigate("/verify-email")
+            }
         } catch (error) {
-            console.log(error);
+            console.log(error);            
         }
     }
 
@@ -79,8 +91,11 @@ const SignUp = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)} 
                     />
+                    {/* Client error */}
+                    {formError && <p className='text-red-500 font-semibold mt-2'>{formError}</p>}
+                    {/* API Error */}
+                    {error && (<p className="text-red-500 font-semibold mt-2">{error}</p>)}
 
-                    {error && <p className='text-red-500 font-semibold mt-2'>{error}</p>}
                     {/* PASSWORD STRENGTH METER */}
                     <PasswordStrengthMeter password={password} />
                     <motion.button 

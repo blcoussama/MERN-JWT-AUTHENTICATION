@@ -8,24 +8,30 @@ import { SendVerificationEmail, SendWelcomeEmail, SendPasswordResetEmail, SendPa
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
-import jwt from 'jsonwebtoken' // Added this import
-
+// Utility function for standardized error responses
+const sendErrorResponse = (res, statusCode, message, debugInfo = null) => {
+    console.error(`Error: ${message}`, debugInfo || "");
+    res.status(statusCode).json({
+        success: false,
+        message,
+    });
+};
 
 export const SignUp = async(req, res) => {
     const { email, password, username, role } = req.body
 
     try {
         if(!email || !password || !username || !role) {
-            throw new Error("All Fields are required!")
+            return sendErrorResponse(res, 400, "All fields are required!");
         }
 
         if (!["admin", "client"].includes(role)) {
-            throw new Error("Invalid role provided!");
+            return sendErrorResponse(res, 400, "Invalid role provided!");
         }
 
         const userAlreadyExists = await User.findOne({ email })
         if(userAlreadyExists) {
-            return res.status(400).json({success: false, message: "User Aleady Exists"})
+            return sendErrorResponse(res, 400, "User already exists!");
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -49,7 +55,7 @@ export const SignUp = async(req, res) => {
         try {
             await SendVerificationEmail(user.email, verificationToken);
         } catch (emailError) {
-            console.error("Email failed to send:", emailError.message);
+            console.error("Failed to send verification email:", emailError.message);
         }
 
         res.status(201).json({
@@ -62,7 +68,7 @@ export const SignUp = async(req, res) => {
         })
 
     } catch (error) {
-        res.status(500).json({success: false, message: error.message})
+        sendErrorResponse(res, 500, "An error occurred during sign up.", error.stack);
     }
 }
 
@@ -76,11 +82,11 @@ export const VerifyEmail = async(req, res) => {
         })
 
         if(!user) {
-            return res.status(400).json({success: false, message: "Invalid or Expired Verification Code!"})
+            return sendErrorResponse(res, 400, "Invalid or expired verification code!");
         }
 
         if (user.isVerified) {
-            return res.status(400).json({ success: false, message: "Email is already verified!" });
+            return sendErrorResponse(res, 400, "Email is already verified!");
         }
 
         user.isVerified = true,
@@ -92,10 +98,10 @@ export const VerifyEmail = async(req, res) => {
         try {
             await SendWelcomeEmail(user.email, user.username);
         } catch (emailError) {
-            console.error("Error sending welcome email:", emailError.message);
+            console.error("Failed to send welcome email:", emailError.message);
         }
 
-        res.status(200).json({success: true, message: "Email Verified.", 
+        res.status(200).json({success: true, message: "Email verified successfully.", 
             user: {
                 ...user._doc,
                 password: undefined
@@ -103,8 +109,7 @@ export const VerifyEmail = async(req, res) => {
         })
 
     } catch (error) {
-        console.log("Error in Email Verification", error.message);
-        res.status(500).json({success: false, message: "Server Error"})
+        sendErrorResponse(res, 500, "An error occurred during email verification.", error.stack);
     }
 }
 
@@ -114,44 +119,24 @@ export const Login = async(req, res) => {
     try {
         // Input validation
         if (!email || !password) {
-            return res.status(400).json({ success: false, message: "Email and password are required!" });
+            return sendErrorResponse(res, 400, "Email and password are required!");
         }
 
         // Find user by email
         const user = await User.findOne({ email: email.toLowerCase() })
         if(!user) {
-            return res.status(400).json({
-                success: false, 
-                message: "Invalid credentials!"
-            })
-        }
-
-        // Check if user is already logged in (has an active session)
-        const existingToken = req.cookies.JWTtoken
-        if (existingToken) {
-            try {
-                const decoded = jwt.verify(existingToken, process.env.JWT_SECRET)
-                if (decoded.userId === user._id.toString()) {
-                    return res.status(400).json({
-                        success: false,
-                        message: "You are already logged in!"
-                    })
-                }
-            } catch (error) {
-                // If token is invalid/expired, continue with login
-                res.clearCookie("JWTtoken")
-            }
+            return sendErrorResponse(res, 400, "Invalid credentials!");
         }
 
         // Check if the user's email is verified
         if (!user.isVerified) {
-            return res.status(400).json({ success: false, message: "Please verify your email before logging in." });
+            return sendErrorResponse(res, 400, "Please verify your email before logging in.");
         }
 
         // Verify password
         const isPasswordValid  = await bcrypt.compare(password, user.password)
         if(!isPasswordValid) {
-            return res.status(400).json({success: false, message: "Invalid Credentials!"})
+            return sendErrorResponse(res, 400, "Invalid credentials!");
         }
 
         // Generate JWT and set cookie
@@ -165,15 +150,14 @@ export const Login = async(req, res) => {
 
         res.status(200).json({
             success: true,
-            message: "LoggedIn Successfully.",
+            message: "Logged in Successfully.",
             user: {
                 ...user._doc,
                 password: undefined
             }
         })
     } catch (error) {
-        console.log("Error while Login!", error);
-        res.status(500).json({success: false, message: error.message})
+        sendErrorResponse(res, 500, "An error occurred during login.", error.stack);
     }
 }
 
@@ -182,85 +166,107 @@ export const Logout = async(req, res) => {
     res.status(200).json({success: true, message: "Logged Out Successfully."})
 }
 
-export const ForgotPassword = async(req, res) => {
-    const { email } = req.body
+export const ForgotPassword = async (req, res) => {
+    const { email } = req.body;
 
     try {
-        const user = await User.findOne({ email })
-        if(!user) {
-            return res.status(400).json({success: false, message: "User Not Found!"})
+        // Validate email
+        if (!email) {
+            return sendErrorResponse(res, 400, "Email is required!");
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return sendErrorResponse(res, 400, "User not found!");
         }
 
         // Generate Reset Token
-        const resetToken = crypto.randomBytes(20).toString("hex")
-        const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000 // 1 Hour
+        const resetToken = crypto.randomBytes(20).toString("hex");
+        const resetTokenExpiresAt = Date.now() + 1 * 60 * 60 * 1000; // 1 Hour
 
-        user.resetPasswordToken = resetToken,
-        user.resetPasswordExpiresAt = resetTokenExpiresAt
+        user.resetPasswordToken = resetToken;
+        user.resetPasswordExpiresAt = resetTokenExpiresAt;
 
-        await user.save()
+        await user.save();
 
-        // Send EMAIL
-        await SendPasswordResetEmail(user.email, `${process.env.CLIENT_URL}/reset-password/${resetToken}`)
+        // Send reset email
+        try {
+            await SendPasswordResetEmail(
+                user.email,
+                `${process.env.CLIENT_URL}/reset-password/${resetToken}`
+            );
+        } catch (emailError) {
+            console.error("Failed to send password reset email:", emailError.message);
+            return sendErrorResponse(res, 500, "Failed to send reset email. Please try again.");
+        }
 
-        res.status(200).json({success: true, message: "Password Reset link sent successfully to your email."})
-
+        res.status(200).json({
+            success: true,
+            message: "Password reset link sent successfully to your email.",
+        });
     } catch (error) {
-        console.log("Error Sending the Password reset email!", error)
-        res.status(400).json({success: false, message: error.message})
+        sendErrorResponse(res, 500, "An error occurred while processing the request.", error.stack);
     }
-}
+};
 
-export const ResetPassword = async(req, res) => {
+export const ResetPassword = async (req, res) => {
+    const { token } = req.params;
+    const { password } = req.body;
+
     try {
-        const { token } = req.params
-        const { password } = req.body
-        
-        if(!password) {
-            throw new Error("Password is required!")
+        // Validate inputs
+        if (!password) {
+            return sendErrorResponse(res, 400, "Password is required!");
         }
 
         const user = await User.findOne({
             resetPasswordToken: token,
-            resetPasswordExpiresAt: { $gt: Date.now() }
-        })
+            resetPasswordExpiresAt: { $gt: Date.now() },
+        });
 
-        if(!user) {
-            return res.status(400).json({success: false, message: "Invalid or Expired Reset Token!"})
+        if (!user) {
+            return sendErrorResponse(res, 400, "Invalid or expired reset token!");
         }
 
-        // Update Password
-        const hashedPassword = await bcrypt.hash(password, 10)
+        // Update password
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-        user.password = hashedPassword
-        user.resetPasswordToken = undefined
-        user.resetPasswordExpiresAt = undefined
+        user.password = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpiresAt = undefined;
 
-        await user.save()
+        await user.save();
 
-        SendPasswordResetSuccessEmail(user.email)
-        res.status(200).json({success: true, message: "Password has been Reset Successfully."})
+        try {
+            await SendPasswordResetSuccessEmail(user.email);
+        } catch (emailError) {
+            console.error("Failed to send reset success email:", emailError.message);
+        }
 
+        res.status(200).json({
+            success: true,
+            message: "Password has been reset successfully.",
+        });
     } catch (error) {
-        console.error(`Error while reseting the password!`, error);
-        res.status(400).json({success: false, message: error.message})
+        sendErrorResponse(res, 500, "An error occurred while resetting the password.", error.stack);
     }
-}
+};
 
-export const CheckAuth = async(req, res) => {
+export const CheckAuth = async (req, res) => {
     try {
-        const user = await User.findById(req.user.userId)
-        if(!user) return res.status(400).json({success: false, message: "User Not Found!"})
+        const user = await User.findById(req.user.userId);
+        if (!user) {
+            return sendErrorResponse(res, 400, "User not found!");
+        }
 
         res.status(200).json({
             success: true,
             user: {
-            ...user._doc,
-            password: undefined
-            }
-        })
+                ...user._doc,
+                password: undefined,
+            },
+        });
     } catch (error) {
-        console.error(`Error In Checking the Authentication!`, error);
-        res.status(400).json({success: false, message: error.message})
+        sendErrorResponse(res, 500, "An error occurred while checking authentication.", error.stack);
     }
-}
+};
