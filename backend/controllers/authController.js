@@ -73,9 +73,16 @@ export const SignUp = async(req, res) => {
 }
 
 export const VerifyEmail = async(req, res) => {
-    const {code} = req.body
+    const {email, code} = req.body
 
     try {
+
+        // First, check if the user is already verified
+        const existingUser = await User.findOne({ email })
+        if (existingUser && existingUser.isVerified) {
+            return sendErrorResponse(res, 400, "Email is already verified!");
+        }
+        
         const user = await User.findOne({
             verificationToken: code,
             verificationTokenExpiresAt: { $gt: Date.now() }

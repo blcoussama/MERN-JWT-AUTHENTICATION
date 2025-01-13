@@ -9,7 +9,7 @@ axios.defaults.withCredentials = true;
 
 // Utility to handle errors from the backend
 const getErrorMessage = (error) =>
-    error.response?.data?.message || "An unexpected error occurred. Please try again.";
+    error.response?.data?.message;
 
 // Async Thunks
 
@@ -110,7 +110,11 @@ const authSlice = createSlice({
         message: null,
     },
 
-    reducers: {}, // Empty reducers as async thunks handle state updates
+    reducers: {
+        clearError: (state) => {
+            state.error = null; // Reset the error state
+        },
+    }, // Empty reducers as async thunks handle state updates
     extraReducers: (builder) => {
         builder
             // SIGN UP
@@ -225,5 +229,7 @@ const authSlice = createSlice({
             });
     },
 });
+
+export const { clearError } = authSlice.actions; // Export the clearError action
 
 export default authSlice.reducer;

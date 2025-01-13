@@ -1,12 +1,3 @@
-// Utility function for standardized error responses
-const sendErrorResponse = (res, statusCode, message, debugInfo = null) => {
-    console.error(`Error: ${message}`, debugInfo || "");
-    res.status(statusCode).json({
-        success: false,
-        message,
-    });
-};
-
 // Admin Dashboard Handler
 export const adminDashboard = async (req, res) => {
     try {
@@ -16,7 +7,7 @@ export const adminDashboard = async (req, res) => {
             message: "Welcome to the Admin Dashboard!",
         });
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred while accessing the Admin Dashboard.", error.stack);
+        return res.status(500).json({success: false, message: "An error occurred while accessing the Admin Dashboard." });
     }
 };
 
@@ -29,6 +20,6 @@ export const clientDashboard = async (req, res) => {
             message: "Welcome to the Client Dashboard!",
         });
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred while accessing the Client Dashboard.", error.stack);
+        return res.status(500).json({success: false, message: "An error occurred while accessing the Client Dashboard." });
     }
 };

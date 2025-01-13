@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import FormInput from "../components/FormInput";
 import { useDispatch, useSelector } from "react-redux";
-import { login } from "../store/authSlice";
+import { clearError, login } from "../store/authSlice";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -14,6 +14,11 @@ const Login = () => {
   const navigate = useNavigate();
 
   const { isLoading, error } = useSelector((state) => state.auth); // Access Redux state
+
+  useEffect(() => {
+      // Clear error when component mounts
+      dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+    }, [dispatch]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -73,11 +78,7 @@ const Login = () => {
           </div>
 
           {/* API Error */}
-          {error && (
-            <p className="text-red-500 font-semibold mb-2">
-              {error}
-            </p>
-          )}
+          {error && (<p className="text-red-500 font-semibold mb-2">{error}</p>)}
 
           {/* Submit Button */}
           <motion.button

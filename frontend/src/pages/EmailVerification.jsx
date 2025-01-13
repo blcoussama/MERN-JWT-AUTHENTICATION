@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux"; // Redux hooks
-import { verifyEmail } from "../store/authSlice"; // Import verifyEmail thunk
+import { clearError, verifyEmail } from "../store/authSlice"; // Import verifyEmail thunk
 
 const EmailVerification = () => {
     const [code, setCode] = useState(["", "", "", "", "", ""]);
@@ -12,22 +12,16 @@ const EmailVerification = () => {
     const dispatch = useDispatch();
     const { isLoading, error } = useSelector((state) => state.auth); // Select loading and error states from Redux
 
+    useEffect(() => {
+        // Clear error when component mounts
+        dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+      }, [dispatch]);
+
     const handleChange = (index, value) => {
         const newCode = [...code];
 
-        // Handle pasted content
-        if (value.length > 1) {
-            const pastedCode = value.slice(0, 6).split("");
-            for (let i = 0; i < 6; i++) {
-                newCode[i] = pastedCode[i] || "";
-            }
-            setCode(newCode);
-
-            // Focus on the last non-empty input or the first empty one
-            const lastFilledIndex = newCode.findLastIndex((digit) => digit !== "");
-            const focusIndex = lastFilledIndex < 5 ? lastFilledIndex + 1 : 5;
-            inputRefs.current[focusIndex].focus();
-        } else {
+        // Handle single character input
+        if (value.length === 1) {
             newCode[index] = value;
             setCode(newCode);
 
@@ -35,7 +29,35 @@ const EmailVerification = () => {
             if (value && index < 5) {
                 inputRefs.current[index + 1].focus();
             }
+        } else if (value === "") {
+            // Handle backspace (empty input)
+            newCode[index] = "";
+            setCode(newCode);
+
+            // Move focus to the previous input field if backspace is pressed
+            if (index > 0) {
+                inputRefs.current[index - 1].focus();
+            }
         }
+    };
+
+    const handlePaste = (index, e) => {
+        const pastedValue = e.clipboardData.getData("Text");
+
+        // Handle the paste of up to 6 digits
+        const pastedCode = pastedValue.slice(0, 6).split("");
+        const newCode = [...code];
+        
+        // Insert pasted code into the state
+        pastedCode.forEach((digit, idx) => {
+            newCode[index + idx] = digit;
+        });
+        setCode(newCode);
+
+        // Focus on the last non-empty input or the next empty one after paste
+        const lastFilledIndex = newCode.findLastIndex((digit) => digit !== "");
+        const focusIndex = lastFilledIndex < 5 ? lastFilledIndex + 1 : 5;
+        inputRefs.current[focusIndex].focus();
     };
 
     const handleKeyDown = (index, e) => {
@@ -94,6 +116,7 @@ const EmailVerification = () => {
                                 value={digit}
                                 onChange={(e) => handleChange(index, e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(index, e)}
+                                onPaste={(e) => handlePaste(index, e)} // Listen for paste event
                                 className="w-12 h-12 text-center text-2xl font-bold bg-gray-700 text-white border-2 border-gray-600 rounded-lg focus:border-green-500 focus:outline-none"
                             />
                         ))}

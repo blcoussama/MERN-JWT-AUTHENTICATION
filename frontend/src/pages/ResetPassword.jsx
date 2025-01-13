@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import FormInput from "../components/FormInput";
 import { Loader, Lock } from "lucide-react";
-import { resetPassword } from "../store/authSlice";
+import { clearError, resetPassword } from "../store/authSlice";
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState("");
@@ -15,7 +15,12 @@ const ResetPasswordPage = () => {
   const { token } = useParams(); // Get reset token from URL
   const navigate = useNavigate();
 
-  const { isLoading, error, message } = useSelector((state) => state.auth); // Access Redux state
+  const { isLoading, error } = useSelector((state) => state.auth); // Access Redux state
+
+   useEffect(() => {
+    // Clear error when component mounts
+    dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+  }, [dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,9 +37,7 @@ const ResetPasswordPage = () => {
       const resultAction = await dispatch(resetPassword({ token, password }));
 
       if (resetPassword.fulfilled.match(resultAction)) {
-        setTimeout(() => {
           navigate("/login"); // Redirect to login after success
-        }, 2000);
       } else {
         console.error(resultAction.payload || "Password reset failed.");
       }
@@ -57,8 +60,6 @@ const ResetPasswordPage = () => {
 
         {/* Backend Errors */}
         {error && <p className="text-red-500 font-semibold mb-4">{error}</p>}
-        {/* Success Message */}
-        {message && <p className="text-green-500 font-semibold mb-4">{message}</p>}
 
         <form onSubmit={handleSubmit}>
           {/* New Password Input */}

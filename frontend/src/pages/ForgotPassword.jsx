@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { ArrowLeft, Loader, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import FormInput from "../components/FormInput";
-import { forgotPassword } from "../store/authSlice"; // Import forgotPassword thunk
+import { clearError, forgotPassword } from "../store/authSlice"; // Import forgotPassword thunk
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
@@ -12,6 +12,11 @@ const ForgotPassword = () => {
 
   const dispatch = useDispatch();
   const { isLoading, error } = useSelector((state) => state.auth); // Access isLoading and error states
+
+  useEffect(() => {
+    // Clear error when component mounts
+    dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+  }, [dispatch]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

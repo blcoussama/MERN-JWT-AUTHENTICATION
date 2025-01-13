@@ -1,11 +1,11 @@
 import { motion } from 'framer-motion'
 import FormInput from '../components/FormInput'
 import { User, Mail, Lock, Loader, UserCog2Icon} from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
 import { useDispatch, useSelector } from "react-redux"; // Import hooks for Redux
-import { signUp } from "../store/authSlice"; // Import the signUp thunk
+import { clearError, signUp } from "../store/authSlice"; // Import the signUp thunk
 
 const SignUp = () => {
 
@@ -19,18 +19,13 @@ const SignUp = () => {
     const dispatch = useDispatch(); // Get the dispatch function from the Redux store
     const { isLoading, error } = useSelector((state) => state.auth) // Access Redux state
 
-    const [formError, setFormError] = useState(null); // Local validation error
-
+    useEffect(() => {
+        // Clear error when component mounts
+        dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+      }, [dispatch]);
 
     const handleSignUp = async(e) => {
         e.preventDefault()
-
-         // Basic form validation
-        if (!username || !email || !password || !role) {
-            setFormError("All Fields are required!")
-            return;
-        }
-        setFormError(null); // Clear form error if validation passes
 
         try {
             // Dispatch SignUp Action from redux AuthSlice
@@ -91,8 +86,7 @@ const SignUp = () => {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)} 
                     />
-                    {/* Client error */}
-                    {formError && <p className='text-red-500 font-semibold mt-2'>{formError}</p>}
+
                     {/* API Error */}
                     {error && (<p className="text-red-500 font-semibold mt-2">{error}</p>)}
 
