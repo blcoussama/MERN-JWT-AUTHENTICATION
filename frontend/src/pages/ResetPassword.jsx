@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useNavigate, useParams } from "react-router-dom";
 import FormInput from "../components/FormInput";
 import { Loader, Lock } from "lucide-react";
-import { clearError, resetPassword } from "../store/authSlice";
+import { clearError, clearLoading, resetPassword } from "../store/authSlice";
 
 const ResetPasswordPage = () => {
   const [password, setPassword] = useState("");
@@ -20,6 +20,10 @@ const ResetPasswordPage = () => {
    useEffect(() => {
     // Clear error when component mounts
     dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+
+    // Clear Loading when component mounts
+          dispatch(clearLoading());// Dispatch an action to clear the loading (define in Redux slice)
+
   }, [dispatch]);
 
   const handleSubmit = async (e) => {

@@ -8,30 +8,21 @@ import { SendVerificationEmail, SendWelcomeEmail, SendPasswordResetEmail, SendPa
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
 
-// Utility function for standardized error responses
-const sendErrorResponse = (res, statusCode, message, debugInfo = null) => {
-    console.error(`Error: ${message}`, debugInfo || "");
-    res.status(statusCode).json({
-        success: false,
-        message,
-    });
-};
-
 export const SignUp = async(req, res) => {
     const { email, password, username, role } = req.body
 
     try {
         if(!email || !password || !username || !role) {
-            return sendErrorResponse(res, 400, "All fields are required!");
+            return res.status(400).json({ success: false, message: "All fields are required!"})
         }
 
         if (!["admin", "client"].includes(role)) {
-            return sendErrorResponse(res, 400, "Invalid role provided!");
+            return res.status(400).json({ success: false, message: "Invalid role provided!"})
         }
 
         const userAlreadyExists = await User.findOne({ email })
         if(userAlreadyExists) {
-            return sendErrorResponse(res, 400, "User already exists!");
+            return res.status(400).json({ success: false, message: "User already exists!"})
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
@@ -68,7 +59,7 @@ export const SignUp = async(req, res) => {
         })
 
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred during sign up.", error.stack);
+        return res.status(500).json({ success: false, message: "An error occurred during sign up!"})
     }
 }
 
@@ -80,7 +71,7 @@ export const VerifyEmail = async(req, res) => {
         // First, check if the user is already verified
         const existingUser = await User.findOne({ email })
         if (existingUser && existingUser.isVerified) {
-            return sendErrorResponse(res, 400, "Email is already verified!");
+            return res.status(400).json({ success: false, message: "Email is already verified!"})
         }
         
         const user = await User.findOne({
@@ -89,11 +80,7 @@ export const VerifyEmail = async(req, res) => {
         })
 
         if(!user) {
-            return sendErrorResponse(res, 400, "Invalid or expired verification code!");
-        }
-
-        if (user.isVerified) {
-            return sendErrorResponse(res, 400, "Email is already verified!");
+            return res.status(400).json({ success: false, message: "Invalid or expired verification code!"})
         }
 
         user.isVerified = true,
@@ -116,7 +103,7 @@ export const VerifyEmail = async(req, res) => {
         })
 
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred during email verification.", error.stack);
+        return res.status(500).json({ success: false, message: "An error occurred while verifying the email"});
     }
 }
 
@@ -126,24 +113,24 @@ export const Login = async(req, res) => {
     try {
         // Input validation
         if (!email || !password) {
-            return sendErrorResponse(res, 400, "Email and password are required!");
+            return res.status(400).json({ success: false, message: "Email and password are required!"});
         }
 
         // Find user by email
         const user = await User.findOne({ email: email.toLowerCase() })
         if(!user) {
-            return sendErrorResponse(res, 400, "Invalid credentials!");
+            return res.status(400).json({ success: false, message: "Invalid credentials!"})
         }
 
         // Check if the user's email is verified
         if (!user.isVerified) {
-            return sendErrorResponse(res, 400, "Please verify your email before logging in.");
+            return res.status(400).json({ success: false, message: "Please verify your email before logging in!"})
         }
 
         // Verify password
         const isPasswordValid  = await bcrypt.compare(password, user.password)
         if(!isPasswordValid) {
-            return sendErrorResponse(res, 400, "Invalid credentials!");
+            return res.status(400).json({ success: false, message: "Invalid credentials!"})
         }
 
         // Generate JWT and set cookie
@@ -164,7 +151,7 @@ export const Login = async(req, res) => {
             }
         })
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred during login.", error.stack);
+        return res.status(500).json({ success: false, message: "An error occurred during login."})
     }
 }
 
@@ -179,12 +166,12 @@ export const ForgotPassword = async (req, res) => {
     try {
         // Validate email
         if (!email) {
-            return sendErrorResponse(res, 400, "Email is required!");
+            return res.status(400).json({ success: false, message: "Email is required!"})
         }
 
         const user = await User.findOne({ email });
         if (!user) {
-            return sendErrorResponse(res, 400, "User not found!");
+            return res.status(400).json({ success: false, message: "User not found!"})
         }
 
         // Generate Reset Token
@@ -204,7 +191,7 @@ export const ForgotPassword = async (req, res) => {
             );
         } catch (emailError) {
             console.error("Failed to send password reset email:", emailError.message);
-            return sendErrorResponse(res, 500, "Failed to send reset email. Please try again.");
+            return res.status(500).json({ success: false, message: "Failed to send reset email. Please try again!"})
         }
 
         res.status(200).json({
@@ -212,7 +199,7 @@ export const ForgotPassword = async (req, res) => {
             message: "Password reset link sent successfully to your email.",
         });
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred while processing the request.", error.stack);
+        return res.status(500).json({ success: false, message: "An error occurred while processing the request!"})
     }
 };
 
@@ -223,7 +210,7 @@ export const ResetPassword = async (req, res) => {
     try {
         // Validate inputs
         if (!password) {
-            return sendErrorResponse(res, 400, "Password is required!");
+            return res.status(400).json({ success: false, message: "Password is required!"})
         }
 
         const user = await User.findOne({
@@ -232,7 +219,7 @@ export const ResetPassword = async (req, res) => {
         });
 
         if (!user) {
-            return sendErrorResponse(res, 400, "Invalid or expired reset token!");
+            return res.status(400).json({ success: false, message: "Invalid or expired reset token!"})
         }
 
         // Update password
@@ -255,7 +242,7 @@ export const ResetPassword = async (req, res) => {
             message: "Password has been reset successfully.",
         });
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred while resetting the password.", error.stack);
+        return res.status(500).json({ success: false, message: "An error occurred while resetting the password!"})
     }
 };
 
@@ -263,7 +250,7 @@ export const CheckAuth = async (req, res) => {
     try {
         const user = await User.findById(req.user.userId);
         if (!user) {
-            return sendErrorResponse(res, 400, "User not found!");
+            return res.status(400).json({ success: false, message: "User not found!"})
         }
 
         res.status(200).json({
@@ -274,6 +261,6 @@ export const CheckAuth = async (req, res) => {
             },
         });
     } catch (error) {
-        sendErrorResponse(res, 500, "An error occurred while checking authentication.", error.stack);
+        return res.status(500).json({ success: false, message: "An error occurred while checking authenticatio!"})
     }
 };

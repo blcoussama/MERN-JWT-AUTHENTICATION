@@ -4,7 +4,7 @@ import { Mail, Lock, Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import FormInput from "../components/FormInput";
 import { useDispatch, useSelector } from "react-redux";
-import { clearError, login } from "../store/authSlice";
+import { clearError, clearLoading, login } from "../store/authSlice";
 
 const Login = () => {
   const [email, setEmail] = useState("");
@@ -16,8 +16,11 @@ const Login = () => {
   const { isLoading, error } = useSelector((state) => state.auth); // Access Redux state
 
   useEffect(() => {
-      // Clear error when component mounts
-      dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+      // Clear Error when component mounts
+      dispatch(clearError()); // Dispatch an action to clear error (defined in Redux slice)
+      // Clear Loading when component mounts
+      dispatch(clearLoading());// Dispatch an action to clear the loading (define in Redux slice)
+
     }, [dispatch]);
 
   const handleLogin = async (e) => {

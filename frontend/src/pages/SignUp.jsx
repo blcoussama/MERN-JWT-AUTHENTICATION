@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
 import { useDispatch, useSelector } from "react-redux"; // Import hooks for Redux
-import { clearError, signUp } from "../store/authSlice"; // Import the signUp thunk
+import { clearError, clearLoading, signUp } from "../store/authSlice"; // Import the signUp thunk
 
 const SignUp = () => {
 
@@ -22,6 +22,10 @@ const SignUp = () => {
     useEffect(() => {
         // Clear error when component mounts
         dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+
+        // Clear Loading when component mounts
+        dispatch(clearLoading());// Dispatch an action to clear the loading (define in Redux slice)
+
       }, [dispatch]);
 
     const handleSignUp = async(e) => {

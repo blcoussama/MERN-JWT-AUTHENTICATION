@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux"; // Redux hooks
-import { clearError, verifyEmail } from "../store/authSlice"; // Import verifyEmail thunk
+import { clearError, clearLoading, verifyEmail } from "../store/authSlice"; // Import verifyEmail thunk
 
 const EmailVerification = () => {
     const [code, setCode] = useState(["", "", "", "", "", ""]);
@@ -15,6 +15,9 @@ const EmailVerification = () => {
     useEffect(() => {
         // Clear error when component mounts
         dispatch(clearError()); // Dispatch an action to clear error (define this action in your Redux slice)
+
+        // Clear Loading when component mounts
+        dispatch(clearLoading());// Dispatch an action to clear the loading (define in Redux slice)
       }, [dispatch]);
 
     const handleChange = (index, value) => {

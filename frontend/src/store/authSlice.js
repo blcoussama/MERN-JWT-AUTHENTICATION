@@ -114,6 +114,9 @@ const authSlice = createSlice({
         clearError: (state) => {
             state.error = null; // Reset the error state
         },
+        clearLoading: (state) => {
+            state.isLoading = null; // Reset the loading state
+        },
     }, // Empty reducers as async thunks handle state updates
     extraReducers: (builder) => {
         builder
@@ -161,9 +164,8 @@ const authSlice = createSlice({
                 state.isAuthenticated = true;
                 state.isCheckingAuth = false;
             })
-            .addCase(checkAuth.rejected, (state, { payload }) => {
+            .addCase(checkAuth.rejected, (state) => {
                 state.isLoading = false;
-                state.error = payload;
                 state.isCheckingAuth = false;
             })
 
@@ -231,5 +233,6 @@ const authSlice = createSlice({
 });
 
 export const { clearError } = authSlice.actions; // Export the clearError action
+export const { clearLoading } = authSlice.actions; // Export the clearError action
 
 export default authSlice.reducer;
