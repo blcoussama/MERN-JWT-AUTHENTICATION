@@ -1,8 +1,8 @@
 import { motion } from 'framer-motion'
 import FormInput from '../components/FormInput'
-import { User, Mail, Lock, Loader, UserCog2Icon} from 'lucide-react'
+import { User, Mail, Lock, Loader} from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation  } from 'react-router-dom'
 import PasswordStrengthMeter from '../components/PasswordStrengthMeter'
 import { useDispatch, useSelector } from "react-redux"; // Import hooks for Redux
 import { clearError, clearLoading, signUp } from "../store/authSlice"; // Import the signUp thunk
@@ -14,6 +14,7 @@ const SignUp = () => {
     const [password, setPassword] = useState("")
     const [role, setRole] = useState("")
 
+    const location = useLocation()
     const navigate = useNavigate()
 
     const dispatch = useDispatch(); // Get the dispatch function from the Redux store
@@ -26,7 +27,15 @@ const SignUp = () => {
         // Clear Loading when component mounts
         dispatch(clearLoading());// Dispatch an action to clear the loading (define in Redux slice)
 
-      }, [dispatch]);
+        // Set the role from the navigation state
+        if (location.state?.role) {
+            setRole(location.state.role);
+        } else {
+            // If no role is provided, redirect back to RoleSelection
+            navigate('/');
+        }
+
+      }, [dispatch, location.state, navigate]);
 
     const handleSignUp = async(e) => {
         e.preventDefault()
@@ -59,17 +68,6 @@ const SignUp = () => {
                 </h2>
 
                 <form onSubmit={handleSignUp}>
-
-                    <FormInput
-                        icon={UserCog2Icon}
-                        type="select"
-                        options={[
-                            { value: "admin", label: "Admin" },
-                            { value: "client", label: "Client" },
-                        ]}
-                        value={role}
-                        onChange={(e) => setRole(e.target.value)}
-                    />
 
                     <FormInput icon={User} 
                     type="text" 

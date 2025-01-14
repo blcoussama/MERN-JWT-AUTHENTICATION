@@ -86,7 +86,18 @@ const EmailVerification = () => {
 
             // Handle successful email verification
             if (verifyEmail.fulfilled.match(resultAction)) {
-                navigate("/"); // Navigate to the home page or dashboard
+                const user = resultAction.payload.user; // Assuming the user data is in the payload
+                switch (user.role) {
+                    case "admin":
+                        navigate("/admin-dashboard");
+                        break;
+                    case "client":
+                        navigate("/client-dashboard");
+                        break;
+                    default:
+                        navigate("/");
+                    break;
+                }
             }
         } catch (err) {
             console.error("Error during email verification:", err);

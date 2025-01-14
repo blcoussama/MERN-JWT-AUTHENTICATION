@@ -7,15 +7,15 @@ import EmailVerification from './pages/EmailVerification';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux'; // Redux hooks
 import { checkAuth } from './store/authSlice'; // Redux thunk
-import HomePage from './pages/HomePage';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
+import RoleSelection from './pages/RoleSelection';
 
 // PROTECT Routes that require authentication
 const ProtectRoute = ({ children, allowedRoles }) => {
-    const { isAuthenticated, user } = useSelector((state) => state.auth); // Redux state
+    const { isAuthenticated, user } = useSelector((state) => state.auth);
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
@@ -26,37 +26,41 @@ const ProtectRoute = ({ children, allowedRoles }) => {
     }
 
     if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/" replace />; // Redirect to a default page if unauthorized
+        return <Navigate to="/" replace />;
     }
 
-    return children; // Render the child components if all conditions are met
+    return children;
 };
 
-// REDIRECT Authenticated Users to Home Page
+// Redirect Authenticated Users to Their Dashboards or Role Selection
 const RedirectAuthenticatedUsers = ({ children }) => {
-    const { isAuthenticated, user } = useSelector((state) => state.auth); // Redux state
+    const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-    if (isAuthenticated && user.isVerified) {
-        // Redirect to respective dashboards based on user role
-        switch (user.role) {
-            case 'admin':
-                return <Navigate to="/admin-dashboard" replace />;
-            case 'client':
-                return <Navigate to="/client-dashboard" replace />;
-            default:
-                return <Navigate to="/" replace />; // Fallback to homepage or a default page
+    if (isAuthenticated) {
+        if (!user.role) {
+            return <Navigate to="/" replace />; // Redirect to role selection
+        }
+        if (user.isVerified) {
+            switch (user.role) {
+                case 'admin':
+                    return <Navigate to="/admin-dashboard" replace />;
+                case 'client':
+                    return <Navigate to="/client-dashboard" replace />;
+                default:
+                    return <Navigate to="/" replace />;
+            }
         }
     }
 
-    return children; // Render the child components if not authenticated or not verified
+    return children;
 };
 
 function App() {
-    const dispatch = useDispatch(); // Redux dispatch
-    const { isCheckingAuth } = useSelector((state) => state.auth); // Access Redux state
+    const dispatch = useDispatch();
+    const { isCheckingAuth } = useSelector((state) => state.auth);
 
     useEffect(() => {
-        dispatch(checkAuth()); // Dispatch the checkAuth thunk
+        dispatch(checkAuth());
     }, [dispatch]);
 
     if (isCheckingAuth) return <LoadingSpinner />;
@@ -65,13 +69,12 @@ function App() {
         <BrowserRouter>
             <AppLayout>
                 <Routes>
-                    <Route
-                        path="/"
+                    <Route path="/" 
                         element={
-                            <ProtectRoute>
-                                <HomePage />
-                            </ProtectRoute>
-                        }
+                            <RedirectAuthenticatedUsers>
+                                <RoleSelection />
+                            </RedirectAuthenticatedUsers>
+                        } 
                     />
 
                     <Route
@@ -137,7 +140,6 @@ function App() {
                         }
                     />
 
-                    {/* Catch all routes */}
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </AppLayout>
