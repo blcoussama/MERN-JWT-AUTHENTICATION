@@ -1,12 +1,13 @@
 import { User } from "../models/userModel.js"
 
 import { GenerateVerificationToken } from "../utils/VerificationToken.js"
-import { GenerateAccessTokenAndSetCookie } from "../utils/JWTandCookie.js"
+import { GenerateAccessTokenAndSetCookie, GenerateRefreshTokenAndSetCookie } from "../utils/JWTandCookie.js"
 
 import { SendVerificationEmail, SendWelcomeEmail, SendPasswordResetEmail, SendPasswordResetSuccessEmail } from "../mails/emails.js"
 
 import bcrypt from 'bcryptjs'
 import crypto from 'crypto'
+import jwt from "jsonwebtoken";
 
 export const SignUp = async(req, res) => {
     const { email, password, username, role } = req.body
@@ -107,57 +108,66 @@ export const VerifyEmail = async(req, res) => {
     }
 }
 
-export const Login = async(req, res) => {
-    const { email, password} = req.body
+export const Login = async (req, res) => {
+    const { email, password } = req.body;
 
     try {
-        // Input validation
+        // Validate inputs
         if (!email || !password) {
-            return res.status(400).json({ success: false, message: "Email and password are required!"});
+            return res.status(400).json({ success: false, message: "Email and password are required!" });
         }
 
-        // Find user by email
-        const user = await User.findOne({ email: email.toLowerCase() })
-        if(!user) {
-            return res.status(400).json({ success: false, message: "Invalid credentials!"})
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid credentials!" });
         }
 
-        // Check if the user's email is verified
         if (!user.isVerified) {
-            return res.status(400).json({ success: false, message: "Please verify your email before logging in!"})
+            return res.status(400).json({ success: false, message: "Please verify your email before logging in!" });
         }
 
-        // Verify password
-        const isPasswordValid  = await bcrypt.compare(password, user.password)
-        if(!isPasswordValid) {
-            return res.status(400).json({ success: false, message: "Invalid credentials!"})
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(400).json({ success: false, message: "Invalid credentials!" });
         }
 
-        // Generate JWT and set cookie
+        // Generate tokens
+        GenerateAccessTokenAndSetCookie(res, user);
+        const refreshToken = GenerateRefreshTokenAndSetCookie(res, user);
 
-        GenerateAccessTokenAndSetCookie(res, user)
-
-        // Update last login timestamp
-        user.lastLogin = new Date()
-
-        await user.save()
+        // Save the refresh token in the database
+        user.refreshToken = refreshToken;
+        await user.save();
 
         res.status(200).json({
             success: true,
-            message: "Logged in Successfully.",
+            message: "Logged in successfully.",
             user: {
                 ...user._doc,
-                password: undefined
-            }
-        })
+                password: undefined,
+            },
+        });
     } catch (error) {
-        return res.status(500).json({ success: false, message: "An error occurred during login."})
+        return res.status(500).json({ success: false, message: "An error occurred during login." });
     }
-}
+};
 
 export const Logout = async(req, res) => {
-    res.clearCookie("JWTtoken") 
-    res.status(200).json({success: true, message: "Logged Out Successfully."})
+    try {
+        const user = await User.findOne({ refreshToken: req.cookies.RefreshToken });
+        if (user) {
+            user.refreshToken = null; // Remove refresh token from database
+            await user.save();
+        }
+
+        // Clear cookies
+        res.clearCookie("AccessToken");
+        res.clearCookie("RefreshToken");
+        
+        res.status(200).json({ success: true, message: "Logged out successfully." });
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "An error occurred during logout." });
+    }
 }
 
 export const ForgotPassword = async (req, res) => {
@@ -262,5 +272,38 @@ export const CheckAuth = async (req, res) => {
         });
     } catch (error) {
         return res.status(500).json({ success: false, message: "An error occurred while checking authenticatio!"})
+    }
+};
+
+export const RefreshToken = async (req, res) => {
+    const refreshToken = req.cookies.RefreshToken || req.body.RefreshToken;
+    console.log("Refresh Token received:", refreshToken);
+
+    try {
+        if (!refreshToken) {
+            console.log("No refresh token provided");
+            return res.status(401).json({ success: false, message: "Unauthorized: No refresh token provided." });
+        }
+
+        const user = await User.findOne({ refreshToken });
+        console.log("User found:", user);
+
+        if (!user) {
+            console.log("Invalid refresh token");
+            return res.status(401).json({ success: false, message: "Unauthorized: Invalid refresh token." });
+        }
+
+        jwt.verify(refreshToken, process.env.REFRESH_SECRET, (err, decoded) => {
+            if (err) {
+                console.error("Token verification failed:", err);
+                return res.status(401).json({ success: false, message: "Unauthorized: Invalid or expired refresh token." });
+            }
+
+            GenerateAccessTokenAndSetCookie(res, user);
+            res.status(200).json({ success: true, message: "Access token refreshed successfully." });
+        });
+    } catch (error) {
+        console.error("Error during token refresh:", error);
+        return res.status(500).json({ success: false, message: "An error occurred during token refresh." });
     }
 };
