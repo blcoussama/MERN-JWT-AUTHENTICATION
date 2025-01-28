@@ -1,7 +1,7 @@
 import { User } from "../models/userModel.js"
 
 import { GenerateVerificationToken } from "../utils/VerificationToken.js"
-import { GenerateJwtTtokenAndSetCookie } from "../utils/JWTandCookie.js"
+import { GenerateAccessTokenAndSetCookie } from "../utils/JWTandCookie.js"
 
 import { SendVerificationEmail, SendWelcomeEmail, SendPasswordResetEmail, SendPasswordResetSuccessEmail } from "../mails/emails.js"
 
@@ -41,7 +41,7 @@ export const SignUp = async(req, res) => {
         await user.save()
 
         //JWT TOKEN
-        GenerateJwtTtokenAndSetCookie(res, user)
+        GenerateAccessTokenAndSetCookie(res, user)
 
         try {
             await SendVerificationEmail(user.email, verificationToken);
@@ -135,7 +135,7 @@ export const Login = async(req, res) => {
 
         // Generate JWT and set cookie
 
-        GenerateJwtTtokenAndSetCookie(res, user)
+        GenerateAccessTokenAndSetCookie(res, user)
 
         // Update last login timestamp
         user.lastLogin = new Date()

@@ -1,11 +1,11 @@
 import jwt from 'jsonwebtoken'
 
-export const GenerateJwtTtokenAndSetCookie = (res, user) => {
+export const GenerateAccessTokenAndSetCookie = (res, user) => {
     const token = jwt.sign({ userId: user._id, role: user.role }, process.env.JWT_SECRET, {
         expiresIn: "7d"
     })
 
-    res.cookie("JWTtoken", token, {
+    res.cookie("AccessToken", token, {
         httpOnly: true, // prevents XSS Attacks
         secure: process.env.NODE_ENV === "production", // works only in production
         samesite: "strict", // prevents CSRF Attacks
