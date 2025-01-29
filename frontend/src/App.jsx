@@ -6,7 +6,7 @@ import Login from './pages/Login';
 import EmailVerification from './pages/EmailVerification';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux'; // Redux hooks
-import { checkAuth } from './store/authSlice'; // Redux thunk
+import { checkAuth, refreshToken } from './store/authSlice'; // Redux thunk
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
@@ -15,7 +15,11 @@ import RoleSelection from './pages/RoleSelection';
 
 // PROTECT Routes that require authentication
 const ProtectRoute = ({ children, allowedRoles }) => {
-    const { isAuthenticated, user } = useSelector((state) => state.auth);
+    const { isLoading, isAuthenticated, user } = useSelector((state) => state.auth);
+
+    if (isLoading) {
+        return <LoadingSpinner />;
+    }
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
@@ -60,8 +64,23 @@ function App() {
     const { isCheckingAuth } = useSelector((state) => state.auth);
 
     useEffect(() => {
-        dispatch(checkAuth());
-    }, [dispatch]);
+    const checkAuthAndRefresh = async () => {
+        try {
+            await dispatch(checkAuth()).unwrap();
+        } catch (error) {
+            // Attempt token refresh if checkAuth fails
+            try {
+                await dispatch(refreshToken()).unwrap();
+                await dispatch(checkAuth()).unwrap();
+            } catch (refreshError) {
+                console.log("Authentication required", refreshError);
+            }
+            console.log(error.message);
+        }
+    };
+    
+    checkAuthAndRefresh();
+}, [dispatch]);
 
     if (isCheckingAuth) return <LoadingSpinner />;
 

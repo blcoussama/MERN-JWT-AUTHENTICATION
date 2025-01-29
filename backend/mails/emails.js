@@ -19,7 +19,7 @@ export const SendVerificationEmail = async(email, verificationToken ) => {
         throw new Error(`Error sending verification email: ${error.message}`);
     }
 }
-
+ 
 export const SendWelcomeEmail = async (email, username) => {
     const msg = {
         to: email, // Dynamic email address

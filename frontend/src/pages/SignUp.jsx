@@ -42,14 +42,13 @@ const SignUp = () => {
 
         try {
             // Dispatch SignUp Action from redux AuthSlice
-            const resultAction = await dispatch(
+            await dispatch(
                 signUp({ email, password, username, role})
-            )
+            ).unwrap();
 
             // Handle successfull Sign-Up
-            if(signUp.fulfilled.match(resultAction)) {
-                navigate("/verify-email")
-            }
+            navigate("/verify-email");
+
         } catch (error) {
             console.log(error);            
         }

@@ -41,9 +41,6 @@ export const SignUp = async(req, res) => {
 
         await user.save()
 
-        //JWT TOKEN
-        GenerateAccessTokenAndSetCookie(res, user)
-
         try {
             await SendVerificationEmail(user.email, verificationToken);
         } catch (emailError) {
@@ -65,48 +62,56 @@ export const SignUp = async(req, res) => {
 }
 
 export const VerifyEmail = async(req, res) => {
-    const {email, code} = req.body
+    const {email, code} = req.body;
 
     try {
-
-        // First, check if the user is already verified
-        const existingUser = await User.findOne({ email })
+        const existingUser = await User.findOne({ email });
         if (existingUser && existingUser.isVerified) {
-            return res.status(400).json({ success: false, message: "Email is already verified!"})
+            return res.status(400).json({ success: false, message: "Email is already verified!"});
         }
         
         const user = await User.findOne({
             verificationToken: code,
             verificationTokenExpiresAt: { $gt: Date.now() }
-        })
+        });
 
-        if(!user) {
-            return res.status(400).json({ success: false, message: "Invalid or expired verification code!"})
+        if (!user) {
+            return res.status(400).json({ success: false, message: "Invalid or expired verification code!"});
         }
 
-        user.isVerified = true,
-        user.verificationToken = undefined,
-        user.verificationTokenExpiresAt = undefined
+        // Mark user as verified
+        user.isVerified = true;
+        user.verificationToken = undefined;
+        user.verificationTokenExpiresAt = undefined;
 
-        await user.save()
+        // Generate and set both access & refresh tokens
+        GenerateAccessTokenAndSetCookie(res, user);
+        const refreshToken = GenerateRefreshTokenAndSetCookie(res, user);
 
+        // Save refresh token in the database
+        user.refreshToken = refreshToken;
+        await user.save();
+
+        // Send welcome email
         try {
             await SendWelcomeEmail(user.email, user.username);
         } catch (emailError) {
             console.error("Failed to send welcome email:", emailError.message);
         }
 
-        res.status(200).json({success: true, message: "Email verified successfully.", 
+        res.status(200).json({
+            success: true, 
+            message: "Email verified successfully.",
             user: {
                 ...user._doc,
                 password: undefined
             }
-        })
+        });
 
     } catch (error) {
         return res.status(500).json({ success: false, message: "An error occurred while verifying the email"});
     }
-}
+};
 
 export const Login = async (req, res) => {
     const { email, password } = req.body;

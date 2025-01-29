@@ -8,7 +8,7 @@ export const GenerateAccessTokenAndSetCookie = (res, user) => {
     res.cookie("AccessToken", token, {
         httpOnly: true, // prevents XSS Attacks
         secure: process.env.NODE_ENV === "production", // works only in production
-        samesite: "strict", // prevents CSRF Attacks
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict", // prevents CSRF Attacks
         maxAge: 30 * 1000 // 30 Secondes
     })
 
@@ -17,13 +17,13 @@ export const GenerateAccessTokenAndSetCookie = (res, user) => {
 
 export const GenerateRefreshTokenAndSetCookie = (res, user) => {
     const refreshToken = jwt.sign({ userId: user._id }, process.env.REFRESH_SECRET, {
-        expiresIn: "5m", // Refresh token valid for 30 days
+        expiresIn: "5m", 
     });
 
     res.cookie("RefreshToken", refreshToken, {
         httpOnly: true, // Prevent XSS attacks
         secure: process.env.NODE_ENV === "production",
-        sameSite: "strict", // Prevent CSRF attacks
+        sameSite: process.env.NODE_ENV === "production" ? "none" : "strict", // Prevent CSRF attacks
         maxAge: 5 * 60 * 1000, // 5 Minutes
     });
 

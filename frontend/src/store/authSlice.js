@@ -1,11 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-
-// API URL based on environment
-const API_URL = import.meta.env.MODE === "development" ? "http://localhost:3000/api/auth" : "/api/auth";
-
-// Axios config for credentials
-axios.defaults.withCredentials = true;
+import axiosInstance, { API_URL } from '../utils/axiosInstance';
 
 // Utility to handle errors from the backend
 const getErrorMessage = (error) =>
@@ -17,7 +11,7 @@ export const signUp = createAsyncThunk(
     "auth/signUp",
     async ({ email, password, username, role }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`${API_URL}/signup`, { email, password, username, role });
+            const response = await axiosInstance.post(`${API_URL}/signup`, { email, password, username, role });
             return response.data; // Return user data from backend
         } catch (error) {
             return rejectWithValue(getErrorMessage(error));
@@ -29,7 +23,19 @@ export const verifyEmail = createAsyncThunk(
     "auth/verifyEmail",
     async ({ code }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`${API_URL}/verify-email`, { code });
+            const response = await axiosInstance.post(`${API_URL}/verify-email`, { code });
+            return response.data;
+        } catch (error) {
+            return rejectWithValue(getErrorMessage(error));
+        }
+    }
+);
+
+export const refreshToken = createAsyncThunk(
+    "auth/refreshToken",
+    async (_, { rejectWithValue }) => {
+        try {
+            const response = await axiosInstance.post("/refresh-token");
             return response.data;
         } catch (error) {
             return rejectWithValue(getErrorMessage(error));
@@ -41,7 +47,7 @@ export const checkAuth = createAsyncThunk(
     "auth/checkAuth",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${API_URL}/check-auth`);
+            const response = await axiosInstance.get("/check-auth");
             return response.data;
         } catch (error) {
             return rejectWithValue(getErrorMessage(error));
@@ -53,7 +59,7 @@ export const login = createAsyncThunk(
     "auth/login",
     async ({ email, password }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`${API_URL}/login`, { email, password });
+            const response = await axiosInstance.post(`${API_URL}/login`, { email, password });
             return response.data; // Return user data from backend
         } catch (error) {
             return rejectWithValue(getErrorMessage(error));
@@ -65,7 +71,7 @@ export const logout = createAsyncThunk(
     "auth/logout",
     async (_, { rejectWithValue }) => {
         try {
-            await axios.post(`${API_URL}/logout`);
+            await axiosInstance.post(`${API_URL}/logout`);
             return { success: true, message: "Logged out successfully." };
         } catch (error) {
             return rejectWithValue(getErrorMessage(error));
@@ -77,7 +83,7 @@ export const forgotPassword = createAsyncThunk(
     "auth/forgotPassword",
     async ({ email }, { rejectWithValue }) => {
         try {
-            await axios.post(`${API_URL}/forgot-password`, { email });
+            await axiosInstance.post(`${API_URL}/forgot-password`, { email });
             return { success: true, message: "Reset password link has been sent to your email." };
         } catch (error) {
             return rejectWithValue(getErrorMessage(error));
@@ -89,7 +95,7 @@ export const resetPassword = createAsyncThunk(
     "auth/resetPassword",
     async ({ token, password }, { rejectWithValue }) => {
         try {
-            const response = await axios.post(`${API_URL}/reset-password/${token}`, { password });
+            const response = await axiosInstance.post(`${API_URL}/reset-password/${token}`, { password });
             return response.data.message;
         } catch (error) {
             return rejectWithValue(getErrorMessage(error));

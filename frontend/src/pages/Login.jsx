@@ -28,12 +28,11 @@ const Login = () => {
 
     try {
       // Dispatch the login thunk with email and password
-      const resultAction = await dispatch(login({ email, password }));
+      await dispatch(login({ email, password })).unwrap();
 
       // Check if login was successful
-      if (login.fulfilled.match(resultAction)) {
-        navigate("/"); // Navigate to the home page or dashboard on success
-      }
+      navigate("/"); // Navigate to the home page or dashboard on success
+
     } catch (err) {
       console.error("Unexpected error during login:", err); // Log unexpected errors for debugging
     }
