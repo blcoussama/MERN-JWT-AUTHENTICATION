@@ -1,29 +1,29 @@
-import jwt from "jsonwebtoken";
+import { User } from '../models/userModel.js';
+import { ACCESS_COOKIE, verifyAccessToken } from '../services/sessionService.js';
 
-// Middleware to verify JWT token
-export const VerifyToken = (req, res, next) => {
-    try {
-        // Check if token exists
-        const token = req.cookies.AccessToken;
-        if (!token) {
-            return res.status(401).json({ success: false, message: "Unauthorized: No token provided." });
-        }
-
-        // Verify the token
-        jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-            if (err) {
-                if (err.name === "TokenExpiredError") {
-                    return res.status(401).json({ success: false, message: "Unauthorized: Token expired." });
-                } else {
-                    return res.status(401).json({ success: false, message: "Unauthorized: Invalid token." });
-                }
-            }
-
-            // Attach user info to the request object
-            req.user = { userId: decoded.userId, role: decoded.role };
-            next();
-        });
-    } catch (error) {
-        return res.status(500).json({ success: false, message: "An error occurred while verifying the token." });
+/**
+ * Requires a valid access token cookie. The user (and therefore the role) is always
+ * reloaded from the database: a demoted or deleted account loses access immediately.
+ */
+export const VerifyToken = async (req, res, next) => {
+    const token = req.cookies?.[ACCESS_COOKIE];
+    if (!token) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: no token provided.' });
     }
+
+    let payload;
+    try {
+        payload = verifyAccessToken(token, req.app.locals.config);
+    } catch (err) {
+        const message = err.name === 'TokenExpiredError' ? 'Unauthorized: token expired.' : 'Unauthorized: invalid token.';
+        return res.status(401).json({ success: false, message });
+    }
+
+    const user = await User.findById(payload.sub);
+    if (!user || !user.isVerified) {
+        return res.status(401).json({ success: false, message: 'Unauthorized: invalid token.' });
+    }
+
+    req.user = user;
+    return next();
 };

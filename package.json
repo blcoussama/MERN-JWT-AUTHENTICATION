@@ -1,30 +1,41 @@
 {
-  "name": "node.js-auth",
-  "version": "1.0.0",
+  "name": "mern-jwt-authentication",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Authentification MERN : vérification d'e-mail, JWT d'accès + refresh token en rotation (cookies httpOnly), rôles client/admin.",
   "main": "backend/index.js",
-  "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon backend/index.js",
-    "start": "cross-env NODE_ENV=production node backend/index.js",
-    "build": "npm install & npm install --prefix frontend && npm run build --prefix frontend"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "type": "module",
-  "description": "",
+  "engines": {
+    "node": ">=22.12"
+  },
+  "scripts": {
+    "dev": "node --env-file-if-exists=.env --watch backend/index.js",
+    "dev:demo": "node backend/scripts/demo.js",
+    "start": "cross-env NODE_ENV=production node --env-file-if-exists=.env backend/index.js",
+    "build": "npm ci && npm ci --prefix frontend && npm run build --prefix frontend",
+    "admin:promote": "node --env-file-if-exists=.env backend/scripts/promoteAdmin.js",
+    "lint": "eslint backend",
+    "test": "vitest run"
+  },
+  "license": "ISC",
   "dependencies": {
-    "@sendgrid/mail": "^8.1.4",
-    "bcryptjs": "^2.4.3",
+    "@sendgrid/mail": "^8.1.6",
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
-    "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "dotenv": "^16.4.7",
-    "express": "^4.21.2",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.9.3"
+    "cross-env": "^10.1.0",
+    "express": "^5.3.0",
+    "express-rate-limit": "^8.7.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^9.11.3",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "cross-env": "^7.0.3",
-    "nodemon": "^3.1.9"
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^17.13.0",
+    "mongodb-memory-server": "^11.3.0",
+    "supertest": "^7.3.1",
+    "vitest": "^4.1.12"
   }
 }

@@ -93,3 +93,33 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE = `
 </body>
 </html>
 `;
+export const WELCOME_EMAIL_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Welcome</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <p>Hi {username},</p>
+  <p>Welcome to {appName}! Your e-mail address is now verified and you can log in.</p>
+  <p>Best regards,<br>The {appName} Team</p>
+</body>
+</html>
+`;
+
+export const ACCOUNT_EXISTS_TEMPLATE = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign-up attempt</title>
+</head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+  <p>Hello,</p>
+  <p>Someone tried to create a new {appName} account with this e-mail address, but an account already exists.</p>
+  <p>If it was you, <a href="{loginURL}">log in</a> or use "Forgot password?" on the login page. Otherwise, you can ignore this e-mail.</p>
+  <p>Best regards,<br>The {appName} Team</p>
+</body>
+</html>
+`;

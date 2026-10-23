@@ -1,73 +1,20 @@
-import { User } from "../models/userModel.js";
+import { toPublicUser, User } from '../models/userModel.js';
 
-// Admin Dashboard Handler
-export const adminDashboard = async (req, res) => {
-    const { email } = req.body;
+const PAGE_SIZE = 50;
 
-    try {
-        if (!email) {
-            return res.status(400).json({ success: false, message: "Email is required!" });
-        }
+/** GET /api/users?page=1 (admin only): paginated list of accounts, without any secret field. */
+export const listUsers = async (req, res) => {
+    const page = Math.max(1, Number.parseInt(req.query.page, 10) || 1);
+    const [users, total] = await Promise.all([
+        User.find().sort({ createdAt: -1 }).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE),
+        User.countDocuments(),
+    ]);
 
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found!" });
-        }
-
-        if (!user.isVerified) {
-            return res.status(403).json({ success: false, message: "User email is not verified!" });
-        }
-
-        if (user.role !== "admin") {
-            return res.status(403).json({ success: false, message: "Access denied. User is not an admin!" });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Welcome to the Admin Dashboard!",
-        });
-    } catch (error) {
-        console.error("Error accessing Admin Dashboard:", error.message);
-        return res.status(500).json({
-            success: false,
-            message: "An error occurred while accessing the Admin Dashboard.",
-        });
-    }
-};
-
-// Client Dashboard Handler
-export const clientDashboard = async (req, res) => {
-    const { email } = req.body;
-
-    try {
-        if (!email) {
-            return res.status(400).json({ success: false, message: "Email is required!" });
-        }
-
-        const user = await User.findOne({ email });
-
-        if (!user) {
-            return res.status(404).json({ success: false, message: "User not found!" });
-        }
-
-        if (!user.isVerified) {
-            return res.status(403).json({ success: false, message: "User email is not verified!" });
-        }
-
-        if (user.role !== "client") {
-            return res.status(403).json({ success: false, message: "Access denied. User is not a client!" });
-        }
-
-        res.status(200).json({
-            success: true,
-            message: "Welcome to the Client Dashboard!",
-        });
-    } catch (error) {
-        console.error("Error accessing Client Dashboard:", error.message);
-        return res.status(500).json({
-            success: false,
-            message: "An error occurred while accessing the Client Dashboard.",
-        });
-    }
+    return res.status(200).json({
+        success: true,
+        users: users.map(toPublicUser),
+        page,
+        pageSize: PAGE_SIZE,
+        total,
+    });
 };

@@ -1,11 +1,14 @@
-import mongoose from "mongoose"
+import mongoose from 'mongoose';
 
-export const connectDB = async() => {
-    try {
-        await mongoose.connect(process.env.MONGO_URI)
-        console.log("MONGO DB Connected Successfully.");
-    } catch (error) {
-        console.log("Error Connection to Mongo Database: ", error.message);
-        process.exit(1) // for failure, If is 0 then status code Success.
-    }
-}
+// Defence in depth against NoSQL operator injection: any `$`-prefixed key coming
+// from a query filter is wrapped in `$eq` unless explicitly marked with mongoose.trusted().
+// (Request bodies are already validated with zod before reaching a query.)
+mongoose.set('sanitizeFilter', true);
+mongoose.set('strictQuery', true);
+
+export const connectDB = async (uri) => {
+    await mongoose.connect(uri);
+    console.log('MongoDB connected.');
+};
+
+export const disconnectDB = () => mongoose.disconnect();

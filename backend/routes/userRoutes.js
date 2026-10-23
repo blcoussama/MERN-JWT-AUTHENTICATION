@@ -1,15 +1,11 @@
 import express from 'express';
-import { VerifyToken } from '../middlewares/verifyToken.js';
-import { adminDashboard, clientDashboard } from '../controllers/userController.js';
+import { listUsers } from '../controllers/userController.js';
 import { authorizedRoles } from '../middlewares/verifyRole.js';
+import { VerifyToken } from '../middlewares/verifyToken.js';
 
 const router = express.Router();
 
-// Admin routes
-router.get('/admin-dashboard', VerifyToken, authorizedRoles("admin"), adminDashboard);
-
-// Client routes
-router.get('/client-dashboard', VerifyToken, authorizedRoles("client"), clientDashboard);
-
+// Admin only: the role is checked on the server, from the database.
+router.get('/', VerifyToken, authorizedRoles('admin'), listUsers);
 
 export default router;
