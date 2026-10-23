@@ -67,7 +67,7 @@ npm run dev --prefix frontend    # terminal 2 : front sur http://localhost:5173
 
 ```bash
 docker run -d --name mern-auth-mongo -p 27017:27017 mongo:8   # ou une base MongoDB Atlas
-cp .env.example .env    # puis remplir les variables (voir ci-dessous)
+# créer un fichier .env à la racine avec les variables décrites ci-dessous
 npm run dev                      # API (rechargement automatique avec node --watch)
 npm run dev --prefix frontend    # front
 ```
