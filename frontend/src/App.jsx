@@ -1,62 +1,39 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import AppLayout from './components/AppLayout';
 import LoadingSpinner from './components/LoadingSpinner';
-import SignUp from './pages/SignUp';
-import Login from './pages/Login';
-import EmailVerification from './pages/EmailVerification';
-import { useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux'; // Redux hooks
-import { checkAuth, refreshToken } from './store/authSlice'; // Redux thunk
-import ForgotPassword from './pages/ForgotPassword';
-import ResetPassword from './pages/ResetPassword';
 import AdminDashboard from './pages/AdminDashboard';
 import ClientDashboard from './pages/ClientDashboard';
-import RoleSelection from './pages/RoleSelection';
+import EmailVerification from './pages/EmailVerification';
+import ForgotPassword from './pages/ForgotPassword';
+import Login from './pages/Login';
+import ResetPassword from './pages/ResetPassword';
+import SignUp from './pages/SignUp';
+import { checkAuth } from './store/authSlice';
 
-// PROTECT Routes that require authentication
+const homeFor = (user) => (user?.role === 'admin' ? '/admin-dashboard' : '/client-dashboard');
+
+// Client-side guard for navigation only: the real authorisation is done by the API.
 const ProtectRoute = ({ children, allowedRoles }) => {
-    const { isLoading, isAuthenticated, user } = useSelector((state) => state.auth);
+    const { isAuthenticated, user } = useSelector((state) => state.auth);
 
-    if (isLoading) {
-        return <LoadingSpinner />;
-    }
-
-    if (!isAuthenticated) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (!user.isVerified) {
-        return <Navigate to="/verify-email" replace />;
-    }
-
-    if (allowedRoles && !allowedRoles.includes(user.role)) {
-        return <Navigate to="/" replace />;
-    }
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (allowedRoles && !allowedRoles.includes(user.role)) return <Navigate to={homeFor(user)} replace />;
 
     return children;
 };
 
-// Redirect Authenticated Users to Their Dashboards or Role Selection
+// Pages reserved to visitors (login, sign-up...): a logged-in user goes to his dashboard.
 const RedirectAuthenticatedUsers = ({ children }) => {
     const { isAuthenticated, user } = useSelector((state) => state.auth);
-
-    if (isAuthenticated) {
-        if (!user.role) {
-            return <Navigate to="/" replace />; // Redirect to role selection
-        }
-        if (user.isVerified) {
-            switch (user.role) {
-                case 'admin':
-                    return <Navigate to="/admin-dashboard" replace />;
-                case 'client':
-                    return <Navigate to="/client-dashboard" replace />;
-                default:
-                    return <Navigate to="/" replace />;
-            }
-        }
-    }
-
+    if (isAuthenticated) return <Navigate to={homeFor(user)} replace />;
     return children;
+};
+
+const Home = () => {
+    const { isAuthenticated, user } = useSelector((state) => state.auth);
+    return <Navigate to={isAuthenticated ? homeFor(user) : '/login'} replace />;
 };
 
 function App() {
@@ -64,83 +41,24 @@ function App() {
     const { isCheckingAuth } = useSelector((state) => state.auth);
 
     useEffect(() => {
-    const checkAuthAndRefresh = async () => {
-        try {
-            await dispatch(checkAuth()).unwrap();
-        } catch (error) {
-            // Attempt token refresh if checkAuth fails
-            try {
-                await dispatch(refreshToken()).unwrap();
-                await dispatch(checkAuth()).unwrap();
-            } catch (refreshError) {
-                console.log("Authentication required", refreshError);
-            }
-            console.log(error.message);
-        }
-    };
-    
-    checkAuthAndRefresh();
-}, [dispatch]);
+        // An expired access token is refreshed transparently by the axios interceptor.
+        dispatch(checkAuth());
+    }, [dispatch]);
 
     if (isCheckingAuth) return <LoadingSpinner />;
+
+    const guest = (page) => <RedirectAuthenticatedUsers>{page}</RedirectAuthenticatedUsers>;
 
     return (
         <BrowserRouter>
             <AppLayout>
                 <Routes>
-                    <Route path="/" 
-                        element={
-                            <RedirectAuthenticatedUsers>
-                                <RoleSelection />
-                            </RedirectAuthenticatedUsers>
-                        } 
-                    />
-
-                    <Route
-                        path="/signup"
-                        element={
-                            <RedirectAuthenticatedUsers>
-                                <SignUp />
-                            </RedirectAuthenticatedUsers>
-                        }
-                    />
-
-                    <Route
-                        path="/login"
-                        element={
-                            <RedirectAuthenticatedUsers>
-                                <Login />
-                            </RedirectAuthenticatedUsers>
-                        }
-                    />
-
-                    <Route
-                        path="/verify-email"
-                        element={
-                            <RedirectAuthenticatedUsers>
-                                <EmailVerification />
-                            </RedirectAuthenticatedUsers>
-                        }
-                    />
-
-                    <Route
-                        path="/forgot-password"
-                        element={
-                            <RedirectAuthenticatedUsers>
-                                <ForgotPassword />
-                            </RedirectAuthenticatedUsers>
-                        }
-                    />
-
-                    <Route
-                        path="/reset-password/:token"
-                        element={
-                            <RedirectAuthenticatedUsers>
-                                <ResetPassword />
-                            </RedirectAuthenticatedUsers>
-                        }
-                    />
-
+                    <Route path="/" element={<Home />} />
+                    <Route path="/signup" element={guest(<SignUp />)} />
+                    <Route path="/login" element={guest(<Login />)} />
+                    <Route path="/verify-email" element={guest(<EmailVerification />)} />
+                    <Route path="/forgot-password" element={guest(<ForgotPassword />)} />
+                    <Route path="/reset-password/:token" element={guest(<ResetPassword />)} />
                     <Route
                         path="/admin-dashboard"
                         element={
@@ -149,7 +67,6 @@ function App() {
                             </ProtectRoute>
                         }
                     />
-
                     <Route
                         path="/client-dashboard"
                         element={
@@ -158,7 +75,6 @@ function App() {
                             </ProtectRoute>
                         }
                     />
-
                     <Route path="*" element={<Navigate to="/" replace />} />
                 </Routes>
             </AppLayout>

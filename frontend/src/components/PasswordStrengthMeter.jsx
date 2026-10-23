@@ -1,8 +1,9 @@
 import { Check, X } from "lucide-react";
 
+// Same rules as the server-side validation (backend/validation/authSchemas.js).
 const PasswordCriteria = ({ password }) => {
 	const criteria = [
-		{ label: "At least 6 characters", met: password.length >= 6 },
+		{ label: "At least 8 characters", met: password.length >= 8 },
 		{ label: "Contains uppercase letter", met: /[A-Z]/.test(password) },
 		{ label: "Contains lowercase letter", met: /[a-z]/.test(password) },
 		{ label: "Contains a number", met: /\d/.test(password) },
@@ -31,7 +32,7 @@ const PasswordStrengthMeter = ({ password }) => {
 
     const getStrength = (pass) => {
         let strength = 0;
-		if (pass.length >= 6) strength++;
+		if (pass.length >= 8) strength++;
 		if (pass.match(/[a-z]/) && pass.match(/[A-Z]/)) strength++;
 		if (pass.match(/\d/)) strength++;
 		if (pass.match(/[^a-zA-Z\d]/)) strength++;

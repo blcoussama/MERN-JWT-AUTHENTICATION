@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, Loader } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import FormInput from "../components/FormInput";
 import { useDispatch, useSelector } from "react-redux";
 import { clearError, clearLoading, login } from "../store/authSlice";
@@ -12,6 +12,7 @@ const Login = () => {
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  const notice = useLocation().state?.notice; // e.g. "E-mail verified successfully"
 
   const { isLoading, error } = useSelector((state) => state.auth); // Access Redux state
 
@@ -27,14 +28,11 @@ const Login = () => {
     e.preventDefault();
 
     try {
-      // Dispatch the login thunk with email and password
       await dispatch(login({ email, password })).unwrap();
-
-      // Check if login was successful
-      navigate("/"); // Navigate to the home page or dashboard on success
-
+      navigate("/"); // "/" redirects to the dashboard of the user's role
     } catch (err) {
-      console.error("Unexpected error during login:", err); // Log unexpected errors for debugging
+      // Right password but e-mail not verified yet: go and enter the code
+      if (err?.code === "EMAIL_NOT_VERIFIED") navigate("/verify-email");
     }
   };
 
@@ -43,10 +41,10 @@ const Login = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden"
+      className="max-w-md w-full bg-gray-800/50 backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden"
     >
       <div className="p-8">
-        <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-green-300 to-emerald-700 text-transparent bg-clip-text">
+        <h2 className="text-3xl font-bold mb-6 text-center bg-linear-to-r from-green-300 to-emerald-700 text-transparent bg-clip-text">
           Welcome Back
         </h2>
 
@@ -58,6 +56,8 @@ const Login = () => {
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            autoComplete="email"
+            required
           />
 
           {/* Password Input */}
@@ -67,6 +67,8 @@ const Login = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            autoComplete="current-password"
+            required
           />
 
           {/* Forgot Password Link */}
@@ -79,14 +81,15 @@ const Login = () => {
             </Link>
           </div>
 
-          {/* API Error */}
+          {/* API Error / success notice */}
           {error && (<p className="text-red-500 font-semibold mb-2">{error}</p>)}
+          {notice && !error && (<p className="text-green-400 font-semibold mb-2">{notice}</p>)}
 
           {/* Submit Button */}
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3 px-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-none focus:ring-1 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200"
+            className="w-full py-3 px-4 bg-linear-to-r from-green-500 to-emerald-600 text-white font-bold rounded-lg shadow-lg hover:from-green-600 hover:to-emerald-700 focus:outline-hidden focus:ring-1 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200"
             type="submit"
             disabled={isLoading}
           >
@@ -100,11 +103,11 @@ const Login = () => {
       </div>
 
       {/* Redirect to Sign-Up */}
-      <div className="px-8 py-4 bg-gray-900 bg-opacity-50 flex justify-center">
+      <div className="px-8 py-4 bg-gray-900/50 flex justify-center">
         <p className="text-sm text-gray-400">
           Don't have an account?{" "}
           <Link
-            to="/"
+            to="/signup"
             className="text-base text-green-400 hover:underline ml-2"
           >
             Create an Account
